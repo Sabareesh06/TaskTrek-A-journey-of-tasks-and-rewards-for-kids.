@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parent Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+
+
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    input, textarea { margin: 5px; }
+    .task { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Parent Task Manager</h1>
+
+  <h3>Create Task</h3>
+  <input id="taskName" placeholder="Task Name" />
+  <textarea id="description" placeholder="Description"></textarea><br>
+  <input id="dueDate" type="date" />
+  <input id="xp" type="number" placeholder="XP" />
+  <button onclick="createTask()">Create Task</button>
+
+  <h3>Task List</h3>
+  <div id="taskList"></div>
+
+  <script>
+    const API = "http://localhost:5000";
+
+    async function createTask() {
+      const name = document.getElementById("taskName").value;
+      const description = document.getElementById("description").value;
+      const dueDate = document.getElementById("dueDate").value;
+      const xp = document.getElementById("xp").value;
+
+      const res = await fetch(`${API}/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, dueDate, xp })
+      });
+      await res.json();
+      loadTasks();
+    }
+
+    async function loadTasks() {
+      const res = await fetch(`${API}/tasks`);
+      const tasks = await res.json();
+      const taskList = document.getElementById("taskList");
+      taskList.innerHTML = "";
+
+      tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "task";
+        div.innerHTML = `
+          <strong>${task.name}</strong><br>
+          XP: ${task.xp} | Due: ${task.dueDate}<br>
+          Status: ${task.status}<br>
+          <button onclick="reviewTask('${task.id}')">Mark Reviewed</button>
+          <button onclick="deleteTask('${task.id}')">Delete</button>
+        `;
+        taskList.appendChild(div);
+      });
+    }
+
+    async function reviewTask(id) {
+      await fetch(`${API}/tasks/${id}/review`, { method: "POST" });
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(`${API}/tasks/${id}`, { method: "DELETE" });
+      loadTasks();
+    }
+
+    loadTasks();
+    
+  </script>
+</body>
+</html>
